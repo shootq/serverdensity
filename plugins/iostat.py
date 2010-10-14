@@ -66,30 +66,65 @@ class Iostat(object):
 	    self.checksLogger = checksLogger
 	    self.rawConfig = rawConfig
 		
+
     def iostat(self):
         """Run the iostat command with the parameters we need
-        and return them in a nice dictionary"""
+        and return them in a nice dictionary."""
         command = Popen("iostat -x", shell=True, stdout=PIPE, close_fds=True).communicate()[0]
         stats = {}
+        rs = []
+        ws = []
+        krs = []
+        kws = []
+        wait = []
+        actv = []
+        svc_t = []
+        w = []
+        b = []
+
         for i in command.split('\n'):
             if i.startswith('device') or 'extend' in i: continue
             foo = i.split()
             if len(foo) < 1: continue
-            device = foo[0]
-            device_stats = {
-                    "r/s"   : foo[1],
-                    "w/s"   : foo[2],
-                    "kr/s"  : foo[3],
-                    "kw/s"  : foo[4],
-                    "wait"  : foo[5],
-                    "actv"  : foo[6],
-                    "svc_t" : foo[7],
-                    "%w"    : foo[8],
-                    "%b"    : foo[9]
-                    }
-            stats[device] = device_stats
+            rs.append(float(foo[1]))
+            ws.append(float(foo[2]))
+            krs.append(float(foo[3]))
+            kws.append(float(foo[4]))
+            wait.append(float(foo[5]))
+            actv.append(float(foo[6]))
+            svc_t.append(float(foo[7]))
+            w.append(float(foo[8]))
+            b.append(float(foo[9]))
+
+
+        stats = {
+            "Reads/s"               : self.average(rs),
+            "Writes/s"              : self.average(ws),
+            "KB reads/s"            : self.average(krs),
+            "Waits"                 : self.average(wait, just_add=True),
+            "Active"                : self.average(actv, just_add=True),
+            "Response Times"        : self.average(svc_t),
+            "Trns Wait percent"     : self.average(w),
+            "Busy Disk percent"     : self.average(b)
+            }
+
         return stats
 
+
+    def average(self, items, just_add=False):
+        """Add up all elements in a list and divide them by the length thus
+        giving you an average"""
+        # make sure we are full of ints:
+        total = 0
+        items_n = len(items)
+        for i in items:
+            total += i
+        if total == 0:
+            return 0
+        if just_add:
+            return int(total)
+
+        return int(total/items_n)
 
 
     def run(self):
