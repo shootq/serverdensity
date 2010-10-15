@@ -70,7 +70,7 @@ class Iostat(object):
     def iostat(self):
         """Run the iostat command with the parameters we need
         and return them in a nice dictionary."""
-        command = Popen("iostat -x", shell=True, stdout=PIPE, close_fds=True).communicate()[0]
+        command = Popen("iostat -x 1 2", shell=True, stdout=PIPE, close_fds=True).communicate()[0]
         stats = {}
         rs = []
         ws = []
@@ -82,19 +82,24 @@ class Iostat(object):
         w = []
         b = []
 
+        count = 0
         for i in command.split('\n'):
-            if i.startswith('device') or 'extend' in i: continue
-            foo = i.split()
-            if len(foo) < 1: continue
-            rs.append(float(foo[1]))
-            ws.append(float(foo[2]))
-            krs.append(float(foo[3]))
-            kws.append(float(foo[4]))
-            wait.append(float(foo[5]))
-            actv.append(float(foo[6]))
-            svc_t.append(float(foo[7]))
-            w.append(float(foo[8]))
-            b.append(float(foo[9]))
+            if i.startswith('device') or 'extend' in i: 
+                count +=1
+                continue
+
+            if count >= 4:
+                foo = i.split()
+                if len(foo) < 1: continue
+                rs.append(float(foo[1]))
+                ws.append(float(foo[2]))
+                krs.append(float(foo[3]))
+                kws.append(float(foo[4]))
+                wait.append(float(foo[5]))
+                actv.append(float(foo[6]))
+                svc_t.append(float(foo[7]))
+                w.append(float(foo[8]))
+                b.append(float(foo[9]))
 
 
         stats = {
